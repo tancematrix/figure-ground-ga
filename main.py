@@ -3,19 +3,28 @@
 目標となる文字列画像を読み込んで、それに近づけるように円画像を配置していく。
 """
 from genetic_algorithm import *
+import PIL.Image
 import argparse
 import numpy
 
 def decide_genom_length(target: np.ndarray):
     """
     目標となる画像のサイズから、配置すべき円の数を概算する。
+    circle_numを変えながらGenerationを初期化してみて、被覆率が0.65を超えたあたりのcircle_numを採用
     """
+    print("Determining the number of circles to locate....")
+    circle_num = 5
     height, width = target.shape
-    # 円の半径は、区間[0, 短辺の1/2]の一様分布からサンプルするので、期待値は短辺の1/4である。
-    expected_r = min(height, width) / 4
-    expected_circle_size = expected_r ** 2 / np.pi
-    # 画像サイズを平均の円の面積で割って、（厳密に詰め込まれるわけではないから）ちょっとかさまし
-    return int(height * width / expected_circle_size * 1.4)
+    r = min(width,height) // 2
+    while(True):
+        g = Generation(generation_size=100, genom_length=circle_num, genom_limits=[height, width, r])
+        coverage = np.mean([np.sum(Phenotype(ge, shape=target.shape).as_image()==0) / (height*width) for ge in g.genom_list])
+        print(f"circle_num={circle_num}, coverage={coverage}")
+        if coverage > 0.6:
+            break
+        circle_num += 5
+    print("Done")
+    return circle_num
 
 if __name__ == "__main__":
     """
@@ -31,8 +40,8 @@ if __name__ == "__main__":
 
     parser = argparse.ArgumentParser()
     parser.add_argument("--target", action="store", type=str, required=True, help="Path to the image of letters, which we imitate. Use letter2image.py beforehand.")
-    parser.add_argument("--font_path", action="store", type=str, default='/System/Library/Fonts/SFCompactDisplay-Light.otf', help="Path to your font. Both of ttf and otf work.")
     parser.add_argument("--iter_num", action="store", type=int, default=5000, help="Number of generation iterations")    
+    parser.add_argument("--result_dir", action="store", type=str, default="result", help="Directory to save result files.")    
     args = parser.parse_args()
 
     # 画像を読み込んでグレースケールに変換
@@ -41,7 +50,7 @@ if __name__ == "__main__":
     height, width = target.shape
     circle_num = decide_genom_length(target)
 
-    g = Generation(generation_size=GENERATION_SIZE, genom_length=circle_num, genom_limits=[height, width, width // 2])
+    g = Generation(generation_size=GENERATION_SIZE, genom_length=circle_num, genom_limits=[height, width, min(height, width) // 2])
     g.set_pm(PM)
     g.print_info()
     for i in range(args.iter_num):
@@ -54,10 +63,11 @@ if __name__ == "__main__":
                 break
         if i % 100 == 0:
             print("saving 途中経過...")
-            g.show_all(255-target, savepath=f"results/generation_{i}.png")
+            g.show_all(255-target, savepath=args.result_dir+f"/generation_{i}.png")
         g.select(int(GENERATION_SIZE * (1 - GENERATION_GAP)))
         g.breed()
+    g.show_all(255-target, savepath=args.result_dir+f"/generation_{args.iter_num-1}.png")
     best_genom, best_score = g.chief()
-    best_pheno = Phenotype(g, shape=target.shape)
-    best_pheno.save("results/best.jpg")
-    pickle.dump(g, open("results/last_generation.pkl", "wb"))
+    best_pheno = Phenotype(best_genom, shape=target.shape)
+    best_pheno.save(args.result_dir + "/best.jpg")
+    pickle.dump(g, open(args.result_dir + "/last_generation.pkl", "wb"))
