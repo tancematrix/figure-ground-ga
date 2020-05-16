@@ -16,7 +16,7 @@ def circle_mask(shape, cx, cy, r):
     return mask
 
 class Genom:
-    def __init__(self, genom_length, random=True, limits=[HEIGHT, WIDTH, WIDTH // 2], chromosome=None):
+    def __init__(self, genom_length, limits, random=True, chromosome=None):
         self.genom_length = genom_length
         self.gene_length = 3 # ハードコーディング
         self.chromosome = np.zeros([self.genom_length, self.gene_length])
@@ -25,7 +25,10 @@ class Genom:
             self.chromosome = chromosome
         elif random:
             self.randomize()
-    
+
+    def getlimits(self):
+        return self.limits
+
     def randomize(self):
         # ハードコーディング
         self.chromosome[:,0] = np.random.randint(0, self.limits[0], self.genom_length)
@@ -34,9 +37,9 @@ class Genom:
     
     def mutate(self, pm):
         whichwillbechanged = np.random.choice([True, False], self.chromosome.shape, p=[pm, 1-pm])
-        self.chromosome[whichwillbechanged[:,0], 0] = np.random.randint(0, HEIGHT, np.sum(whichwillbechanged[:,0]))
-        self.chromosome[whichwillbechanged[:,1], 1] = np.random.randint(0, WIDTH, np.sum(whichwillbechanged[:,1]))
-        self.chromosome[whichwillbechanged[:,2], 2] = np.random.randint(0, WIDTH//2, np.sum(whichwillbechanged[:,2]))
+        self.chromosome[whichwillbechanged[:,0], 0] = np.random.randint(0, self.limits[0], np.sum(whichwillbechanged[:,0]))
+        self.chromosome[whichwillbechanged[:,1], 1] = np.random.randint(0, self.limits[1], np.sum(whichwillbechanged[:,1]))
+        self.chromosome[whichwillbechanged[:,2], 2] = np.random.randint(0, self.limits[2], np.sum(whichwillbechanged[:,2]))
 
 class Phenotype():
     def __init__(self, genom: Genom, shape):
@@ -57,12 +60,14 @@ class Phenotype():
     
     def show(self):
         plt.imshow(self.morph)
+        plt.close()
     
     def save(self, path, title=""):
         plt.gray()
         plt.imshow(self.morph)
         plt.title(title)
         plt.savefig(path)
+        plt.close()
         
     def evaluate(self, target:np.ndarray):
         ds_rate = min(self.morph.shape) // 10
@@ -80,13 +85,14 @@ class Family:
     def _crossover(self):
         ch1 = self.genom1.chromosome
         ch2 = self.genom2.chromosome
+        limits = self.genom1.getlimits()
         genom_length = len(ch1)
         cross_point_1 = np.random.randint(0, genom_length-1)
         cross_point_2 = np.random.randint(cross_point_1+1, genom_length)
         ofs1 = np.concatenate([ch1[:cross_point_1], ch2[cross_point_1:cross_point_2], ch1[cross_point_2:]])
         ofs2 = np.concatenate([ch2[:cross_point_1], ch1[cross_point_1:cross_point_2], ch2[cross_point_2:]])
-        self.offspring1 = Genom(genom_length, chromosome=ofs1)
-        self.offspring2 = Genom(genom_length, chromosome=ofs2)
+        self.offspring1 = Genom(genom_length, limits=limits, chromosome=ofs1)
+        self.offspring2 = Genom(genom_length, limits=limits, chromosome=ofs2)
             
     def breed(self, pm=0.05):
         self._crossover()
@@ -151,6 +157,7 @@ class Generation:
 
         ax0 = fig.add_subplot(rownum, colnum, 1)
         plt.axis('off')
+        plt.gray()
         ax0.imshow(target)
         ax0.title.set_text("target")
         for i, (genom, evaluation) in enumerate(zip(self.genom_list, self.evaluation)):
@@ -163,4 +170,5 @@ class Generation:
             plt.savefig(savepath)
         else:
             fig.show()      
+        plt.close()
 
