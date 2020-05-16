@@ -20,7 +20,7 @@ def decide_genom_length(target: np.ndarray):
         g = Generation(generation_size=100, genom_length=circle_num, genom_limits=[height, width, r])
         coverage = np.mean([np.sum(Phenotype(ge, shape=target.shape).as_image()==0) / (height*width) for ge in g.genom_list])
         print(f"circle_num={circle_num}, coverage={coverage}")
-        if coverage > 0.6:
+        if coverage > 0.7:
             break
         circle_num += 5
     print("Done")
