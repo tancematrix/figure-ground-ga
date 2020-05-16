@@ -1,6 +1,4 @@
-import PIL.Image
-import PIL.ImageDraw
-import PIL.ImageFont
+# coding:utf-8
 from matplotlib import pyplot as plt
 import numpy as np
 from typing import NamedTuple
@@ -43,7 +41,7 @@ class Genom:
 class Phenotype():
     def __init__(self, genom: Genom, shape):
         self.morph = np.full(shape, 255)
-        self.genom = genom.chromosome # ここが最悪
+        self.genom = genom.chromosome # TODO: 直接渡しているのでよくない
         self.encode()
 
     def encode(self):
@@ -100,6 +98,8 @@ class Family:
 class Generation:
     def __init__(self, generation_size=100, genom_length=10, genom_limits=[HEIGHT, WIDTH, WIDTH // 2],pm=0.05):
         self.size = generation_size
+        self.genom_length = genom_length
+        self.genom_limits = genom_limits
         self.genom_list = [Genom(genom_length, genom_limits) for i in range(generation_size)]
         self.evaluation = []
         self.elite_ind = []
@@ -135,6 +135,14 @@ class Generation:
         mi, ma, ave = np.min(self.evaluation), np.max(self.evaluation), np.mean(self.evaluation)
         print(f"best: {mi:.1f}, worst: {ma:.1f}, ave: {ave:.1f}")
         return mi, ma, ave
+    
+    def print_info(self):
+        print("GENERATION INFO")
+        print("---------------")
+        print(f"generation size: {self.size}")
+        print(f"circle num     : {self.genom_length}")
+        print(f"canvas size    : {self.genom_limits[:2]}")
+        print(f"Pm             : {self.pm}")
         
     def show_all(self, target, savepath="",):
         rownum = 5 # 適当
@@ -148,6 +156,7 @@ class Generation:
         for i, (genom, evaluation) in enumerate(zip(self.genom_list, self.evaluation)):
             ax = fig.add_subplot(rownum, colnum, i+2)
             plt.axis('off')
+            plt.gray()
             ax.imshow(Phenotype(genom, shape=target.shape).as_image())
             ax.title.set_text("{:.1f}".format(evaluation))
         if savepath:
@@ -155,46 +164,3 @@ class Generation:
         else:
             fig.show()      
 
-if __name__ == "__main__":
-    fontsize = 150
-    ttfontname = '/System/Library/Fonts/SFCompactDisplay-Light.otf'
-    text = "P"
-
-    canvasSize = (100,100)
-    backgroundRGB = (255)
-    textRGB       = (0)
-
-    font = PIL.ImageFont.truetype(ttfontname, fontsize)
-    img  = PIL.Image.new('L', canvasSize, backgroundRGB)
-    draw = PIL.ImageDraw.Draw(img)
-    textWidth, textHeight = draw.textsize(text,font=font)
-    canvasSize = (int(textWidth * 1.1), int(textHeight * 1.1))
-    img  = PIL.Image.new('L', canvasSize, backgroundRGB)
-    draw = PIL.ImageDraw.Draw(img)
-    textTopLeft = (0 , -10)
-    draw.text(textTopLeft, text, fill=textRGB, font=font)
-
-    target = np.array(img)
-    height, width = target.shape
-    
-
-    GENERATION_GAP = 0.2
-    GENERATION_SIZE = 100
-    MAX_ITER = 10000
-    PM = 0.05
-    g = Generation(generation_size=GENERATION_SIZE, genom_length=10, genom_limits=[height, width, width // 2])
-    g.set_pm(PM)
-    for i in range(MAX_ITER):
-        g.evaluate(255-target)
-        if i % 10 == 0:
-            print(f"generation {i}")
-            mi, ma, ave = g.summary()
-            if mi < 100:
-                print("score achieved, break..")
-                break
-        if i % 100 == 0:
-            print("saving 途中経過...")
-            g.show_all(255-target, savepath=f"results/generation_{i}.png")
-        g.select(int(GENERATION_SIZE * (1 - GENERATION_GAP)))
-        g.breed()    
-    pickle.dump(g, open("results/last_generation.pkl", "wb"))
