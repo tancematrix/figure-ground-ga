@@ -1,13 +1,20 @@
+# coding:utf-8
 """
 文字（列）を受け取って文字画像に変換する。
 """
 import PIL.Image
 import PIL.ImageFont
 import PIL.ImageDraw
+import argparse
 
 if __name__ == "__main__":
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--font_path", action="store", type=str, default='/System/Library/Fonts/SFCompactDisplay-Light.otf', help="Path to your font. Both of ttf and otf work.")
+    parser.add_argument("--output_file", "-o", action="store", type=str, default="letters.png", help="File name of the output image.")    
+    args = parser.parse_args()
+
     fontsize = 150
-    ttfontname = '/System/Library/Fonts/SFCompactDisplay-Light.otf'
+    ttfontname = args.font_path
     text = input("文字を入力してください>> ")
 
     canvasSize = (100,100) # 仮に決めておく
@@ -26,4 +33,4 @@ if __name__ == "__main__":
     draw = PIL.ImageDraw.Draw(img)
     textTopLeft = (0 , -10)
     draw.text(textTopLeft, text, fill=textRGB, font=font)
-    img.save("letter.jpg")
+    img.save(args.output_file)
