@@ -165,10 +165,8 @@ class Generation:
         すなわち、ランダムに選ばれた2個体を交差し、子個体と合わせた4個体からルーレット選択により2個体を選択する。
         """
         parents_inds = random.sample(range(self.size), 2)
-        print(parents_inds)
         family = Family(self.genom_list[parents_inds[0]], self.genom_list[parents_inds[1]])
         survivors = family.mgg_change(target, pm=self.pm)
-        print(survivors)
         self.genom_list[parents_inds[0]] = survivors[0]
         self.genom_list[parents_inds[1]] = survivors[1]
         
@@ -227,7 +225,7 @@ class Generation:
         ax0 = fig.add_subplot(rownum, colnum, 1)
         plt.axis('off')
         plt.gray()
-        ax0.imshow(target)
+        ax0.imshow(255-target)
         ax0.title.set_text("target")
         for i, (genom, evaluation) in enumerate(zip(self.genom_list, self.evaluation)):
             ax = fig.add_subplot(rownum, colnum, i+2)
