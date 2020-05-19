@@ -24,7 +24,7 @@ def decide_genom_length(target: np.ndarray):
             break
         circle_num += 5
     print("Done")
-    return circle_num
+    return circle_num + 10
 
 if __name__ == "__main__":
     """
@@ -42,14 +42,17 @@ if __name__ == "__main__":
     parser.add_argument("--target", action="store", type=str, required=True, help="Path to the image of letters, which we imitate. Use letter2image.py beforehand.")
     parser.add_argument("--iter_num", action="store", type=int, default=5000, help="Number of generation iterations")    
     parser.add_argument("--result_dir", action="store", type=str, default="result", help="Directory to save result files.")    
+    parser.add_argument("--circle_num", action='store', type=int, default=None)
     args = parser.parse_args()
 
     # 画像を読み込んでグレースケールに変換
     img = PIL.Image.open(args.target)
     target = np.array(img.convert('L'))
     height, width = target.shape
-    circle_num = decide_genom_length(target)
-
+    if args.circle_num is None:
+        circle_num = decide_genom_length(target)
+    else:
+        circle_num = args.circle_num
     g = Generation(generation_size=GENERATION_SIZE, genom_length=circle_num, genom_limits=[height, width, min(height, width) // 2])
     g.set_pm(PM)
     g.print_info()
