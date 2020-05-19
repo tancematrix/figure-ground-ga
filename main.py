@@ -35,7 +35,7 @@ if __name__ == "__main__":
     PM: 突然変異確率（各遺伝子がこの確率で突然変異する）
     """
     GENERATION_GAP = 0.2
-    GENERATION_SIZE = 100
+    GENERATION_SIZE = 20
     PM = 0.05
 
     parser = argparse.ArgumentParser()
@@ -56,6 +56,10 @@ if __name__ == "__main__":
     g = Generation(generation_size=GENERATION_SIZE, genom_length=circle_num, genom_limits=[height, width, min(height, width) // 2])
     g.set_pm(PM)
     g.print_info()
+    """
+    # 以下、MGGモデルを採用する前のモデル。エリート選択ののち、エリート内で交差を行う。
+    # 交差の結果生じた子孫が選択のたびに淘汰されてしまうので、多様性が低かった。先に交差を行うのが正しい気がする。
+    # 今後の参考のために残しておく。
     for i in range(args.iter_num):
         g.evaluate(255-target)
         if i % 10 == 0:
@@ -69,6 +73,20 @@ if __name__ == "__main__":
             g.show_all(255-target, savepath=args.result_dir+f"/generation_{i}.png")
         g.select(int(GENERATION_SIZE * (1 - GENERATION_GAP)))
         g.breed()
+    """
+    for i in range(args.iter_num):
+        g.evaluate(255-target)
+        if i % 100 == 0:
+            print(f"generation {i}")
+            mi, ma, ave = g.summary()
+            if mi < 100:
+                print("score achieved, break..")
+                break
+        if i % 500 == 0:
+            print("saving 途中経過...")
+            g.show_all(255-target, savepath=args.result_dir+f"/generation_{i}.png")
+        g.mgg_change(255-target)
+
     g.show_all(255-target, savepath=args.result_dir+f"/generation_{args.iter_num-1}.png")
     best_genom, best_score = g.chief()
     best_pheno = Phenotype(best_genom, shape=target.shape)
