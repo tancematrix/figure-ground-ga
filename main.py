@@ -13,7 +13,7 @@ def decide_genom_length(target: np.ndarray):
     circle_numを変えながらGenerationを初期化してみて、被覆率が0.65を超えたあたりのcircle_numを採用
     """
     print("Determining the number of circles to locate....")
-    circle_num = 5
+    circle_num = 10
     height, width = target.shape
     r = min(width,height) // 2
     while(True):
@@ -22,7 +22,7 @@ def decide_genom_length(target: np.ndarray):
         print(f"circle_num={circle_num}, coverage={coverage}")
         if coverage > 0.9:
             break
-        circle_num += 5
+        circle_num += 10
     print("Done")
     return circle_num
 
