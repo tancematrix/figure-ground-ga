@@ -75,9 +75,9 @@ if __name__ == "__main__":
         g.breed()
     """
     for i in range(args.iter_num):
-        g.evaluate(255-target)
         if i % 100 == 0:
             print(f"generation {i}")
+            g.evaluate(255-target)
             mi, ma, ave = g.summary()
             if mi < 100:
                 print("score achieved, break..")
@@ -90,5 +90,5 @@ if __name__ == "__main__":
     g.show_all(255-target, savepath=args.result_dir+f"/generation_{args.iter_num-1}.png")
     best_genom, best_score = g.chief()
     best_pheno = Phenotype(best_genom, shape=target.shape)
-    best_pheno.save(args.result_dir + "/best.jpg")
+    best_pheno.save(args.result_dir + "/best.png")
     pickle.dump(g, open(args.result_dir + "/last_generation.pkl", "wb"))

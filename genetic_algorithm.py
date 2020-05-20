@@ -52,7 +52,7 @@ class Phenotype():
         self.morph = self.morph * mask
 
     def as_image(self):
-        return 255 - self.morph
+        return self.morph
     
     def _mask(self, gene: np.ndarray):
         shape = self.morph.shape[:2]
@@ -231,7 +231,7 @@ class Generation:
             ax = fig.add_subplot(rownum, colnum, i+2)
             plt.axis('off')
             plt.gray()
-            ax.imshow(Phenotype(genom, shape=target.shape).as_image(), vmin = 0, vmax = 255)
+            ax.imshow(255 - Phenotype(genom, shape=target.shape).as_image(), vmin = 0, vmax = 255)
             ax.title.set_text("{:.1f}".format(evaluation))
         if savepath:
             plt.savefig(savepath)
