@@ -5,6 +5,7 @@
 import PIL.Image
 import PIL.ImageFont
 import PIL.ImageDraw
+import numpy as np
 import argparse
 
 if __name__ == "__main__":
@@ -33,4 +34,9 @@ if __name__ == "__main__":
     draw = PIL.ImageDraw.Draw(img)
     textTopLeft = (0 , -10)
     draw.text(textTopLeft, text, fill=textRGB, font=font)
+    img_arr = np.array(img)
+
+    # 文字のギリギリまでトリミング
+    img_arr = img_arr[np.any(img_arr==0, axis=1)][:, np.any(img_arr==0, axis=0)]
+    img = PIL.Image.fromarray(img_arr)
     img.save(args.output_file)
