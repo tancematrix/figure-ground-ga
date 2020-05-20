@@ -94,7 +94,7 @@ mnistなどで事前学習したCNNによる特徴量のcos距離...とかにす
 Pythonで0からクラス設計を行ったのも初めてなので、ご指導ご鞭撻のほどよろしくお願いいたします。
 
 # 遺伝的アルゴリズムの実装
-##遺伝的アルゴリズム略解 
+## 遺伝的アルゴリズム略解 
 遺伝的アルゴリズムについては[このスライド](https://www.slideshare.net/kzokm/genetic-algorithm-41617242)が非常にわかりやすいです。
 ここでは必要最低限の解説をします。（間違いの指摘をお願いいたします）
 
@@ -139,19 +139,6 @@ Pythonで0からクラス設計を行ったのも初めてなので、ご指導�
 詳細は[github](https://github.com/tancematrix/figure-ground-ga)にあります。
 以下の4つのクラスによってプログラムを構成しました。Phenotypeクラスにゲノムを渡すと形質が発現する、という設計にするとかっこいいなと思って作ったのですが、あまり使い勝手のいい出来にはなりませんでした...。
 
-main関数はシンプルに書けて、以下のような感じです。ただし`target`は目標画像(ndarray)です。
-
-```python
-g = Generation(generation_size=GENERATION_SIZE, genom_length=circle_num, genom_limits=[height, width, min(height, width) // 2], pm=0.05)
-for i in range(ITER_NUM):
-    g.evaluate(255-target)
-    min_score, max_score, ave_score = g.summary()
-    if mi < THRESHOLD:
-        print("score achieved, break..")
-        break
-    g.mgg_change(255-target)
-```
-
 
 - Genom(genom_length:int, genom_limits:array-like)
     - [円のx座標, 円のy座標, 円の半径] * genom_length に相当するゲノム(2d-array)を格納することを主な目的としたクラス。
@@ -168,5 +155,31 @@ for i in range(ITER_NUM):
     - genomの集合である世代を管理するクラス。コンストラクタに世代サイズや突然変異確率などの設定を渡す。
     - `mgg_change(target)`メソッドで世代間最小ギャップモデルに基づく世代交代を行う。
         - 基本的にこのメソッドを繰り返すことで遺伝的アルゴリズムが実行される。
+
+main関数はシンプルに書けて、以下のような感じです。ただし`target`は目標画像(ndarray)です。
+
+```python
+g = Generation(generation_size=GENERATION_SIZE, genom_length=circle_num, genom_limits=[height, width, min(height, width) // 2], pm=0.05)
+for i in range(ITER_NUM):
+    g.evaluate(255-target)
+    min_score, max_score, ave_score = g.summary()
+    if mi < THRESHOLD:
+        print("score achieved, break..")
+        break
+    g.mgg_change(255-target)
+```
+
+# 追加情報
+Pythonには遺伝的アルゴリズム用のライブラリがちゃんとあります。
+[Deap](https://github.com/deap/deap)というのが有名なようです。
+[Qiitaの解説記事](https://qiita.com/shiro-kuma/items/0cb8955bd85027d58c8e)もあります。
+
+# 参考文献
+遺伝的アルゴリズム（Genetic Algorithm）を始めよう！ 
+- https://www.slideshare.net/kzokm/genetic-algorithm-41617242
+Pythonで遺伝的アルゴリズム
+- https://qiita.com/KeisukeToyota/items/0f527a72270430017d8d
+python - numpy配列の円形セクターをマスクする
+- https://ja.coder.work/so/python/503264
 
 [^2]: 不正確な言い方ですが。
