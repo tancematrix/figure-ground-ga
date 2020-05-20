@@ -2,7 +2,7 @@
 Using genetic algorithm, locate circles so that the background looks like a letter.
 
 背景が文字に見えるように、円を配置します。遺伝的アルゴリズムを用いています。
-「2m離れると読める」と話題になった岐阜新聞の広告の手法(https://news.yahoo.co.jp/articles/6a90515f951be8184e68b49677356d954548e60c)を自動化しようという試みです。
+「2m離れると読める」と話題になった[岐阜新聞の広告の手法](https://news.yahoo.co.jp/articles/6a90515f951be8184e68b49677356d954548e60c)を自動化しようという試みです。
 
 文字の画像を入力として、次のような出力をします。
 
@@ -100,4 +100,3 @@ mnistなどで事前学習したCNNによる特徴量のcos距離...とかにす
         - 基本的に上記二つのメソッドを繰り返すことで遺伝的アルゴリズムが実行される。
     - `summary()`:その世代の評価値のmin・max・averageをprintする, `print_info()`: 初期化時のパラメータを表示する, `show_all(target, path)`: その世代の結果を画像として保存する, などの事務的機能がある。
 
-    
