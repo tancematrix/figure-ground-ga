@@ -8,9 +8,12 @@ Using genetic algorithm, locate circles so that the background looks like a lett
 
 # 実行方法
 ## requirements
-python=3.7.3
+- python3
 
-詳細はrequirments.txtを見てください。Pillow(文字画像の生成と画像出力のために)、numpy, scipyくらいががインストールされていれば動くと思います。
+    - 3.7.3と3.6.8においては動くことを確認しています
+- packages
+    - Pillow(文字画像の生成と画像出力のために)、numpy, scipy
+    - 詳細はrequirments.txtを見てください。
 ## 文字画像の作成
 
     python letter2image.py --font_path FONT_PATH --output_file OUTPUT_FILE
