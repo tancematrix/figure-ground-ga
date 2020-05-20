@@ -71,9 +71,9 @@ class Phenotype():
         
     def evaluate(self, target:np.ndarray):
         ds_rate = min(self.morph.shape) // 20
-        down_sampled_morph = scipy.ndimage.gaussian_filter(self.morph, sigma=ds_rate)[::ds_rate, ::ds_rate]
-        down_sampled_target = scipy.ndimage.gaussian_filter(target, sigma=ds_rate)[::ds_rate, ::ds_rate]
-        return np.linalg.norm(down_sampled_morph - down_sampled_target)
+        down_sampled_morph = scipy.ndimage.gaussian_filter(target- self.morph, sigma=ds_rate)[::ds_rate, ::ds_rate]
+        # down_sampled_target = scipy.ndimage.gaussian_filter(target, sigma=ds_rate)[::ds_rate, ::ds_rate]
+        return np.linalg.norm(down_sampled_morph )
 
 class Family:
     def __init__(self, genom1, genom2):
