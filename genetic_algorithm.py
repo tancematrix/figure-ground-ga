@@ -5,12 +5,14 @@ from typing import NamedTuple
 import scipy.ndimage
 import random
 import pickle
-
+from numba import jit
 HEIGHT, WIDTH = 150, 90
 
 # 補助的な関数
+@jit(nopython=True)
 def circle_mask(shape, cx, cy, r):
-    x, y = np.ogrid[:shape[0], :shape[1]]
+    x = np.arange(shape[0]).reshape(-1, 1)
+    y = np.arange(shape[1]).reshape(1, -1)
     r2 = (x-cx)*(x-cx) + (y-cy)*(y-cy)
     mask = r2 > r ** 2
     return mask
@@ -71,9 +73,11 @@ class Phenotype():
         
     def evaluate(self, target:np.ndarray):
         ds_rate = min(self.morph.shape) // 20
-        down_sampled_morph = scipy.ndimage.gaussian_filter(target- self.morph, sigma=ds_rate)[::ds_rate, ::ds_rate]
+        # 畳み込み -> 差分　と 差分 -> 畳み込み は等価なので、畳み込みを一回で済ました方がいい
+        # down_sampled_morph = scipy.ndimage.gaussian_filter(self.morph, sigma=ds_rate)[::ds_rate, ::ds_rate]
         # down_sampled_target = scipy.ndimage.gaussian_filter(target, sigma=ds_rate)[::ds_rate, ::ds_rate]
-        return np.linalg.norm(down_sampled_morph )
+        diff = scipy.ndimage.gaussian_filter(target - self.morph, sigma=ds_rate)[::ds_rate, ::ds_rate]
+        return np.linalg.norm(diff)
 
 class Family:
     def __init__(self, genom1, genom2):
