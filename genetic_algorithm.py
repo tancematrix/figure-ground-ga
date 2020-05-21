@@ -32,6 +32,7 @@ class Genom:
         self.gene_length = 3 # ハードコーディング
         self.chromosome = np.zeros([self.genom_length, self.gene_length])
         self.limits = limits
+        self.evaluation = None
         if chromosome is not None:
             self.chromosome = chromosome
         elif random:
@@ -39,6 +40,9 @@ class Genom:
 
     def getlimits(self):
         return self.limits
+
+    def set_evaluation(self, evaluation):
+        self.evaluation = evaluation
 
     def randomize(self):
         # ハードコーディング
@@ -162,15 +166,16 @@ class Family:
         if self.offspring1 is None:
             self._crossover()
         genom_list = [self.genom1, self.genom2, self.offspring1, self.offspring2]
-        self.evaluation = np.array([Phenotype(g, shape=target.shape).evaluate(target) for g in genom_list])
+        self.evaluation = np.array([Phenotype(g, shape=target.shape).evaluate(target) if g.evaluation is None else g.evaluation for g in genom_list]) # もしすでに計算していたら発現させるまでもない
     
     def _roulette(self, ind_list, select_num=1):
         if self.evaluation is []:
             self._evaluate()
-        genom_list = np.array([self.genom1, self.genom2, self.offspring1, self.offspring2])[ind_list]
+        # 評価値は低いほうが良い、という方針を取っているが、ルーレット選択においては評価値と選択確率を比例させる必要がある。
+        # そのため、最大評価値 + 最小評価値 - 自分の評価値 という変換によって順序を逆転させている。
         evaluation = self.evaluation[ind_list[0]] + self.evaluation[ind_list[-1]] - self.evaluation[ind_list]
         props = evaluation / np.sum(evaluation)
-        return np.random.choice(genom_list, select_num, p=props)
+        return np.random.choice(ind_list, select_num, p=props)
     
     def mgg_change(self, target, pm=0.05):
         """
@@ -187,8 +192,11 @@ class Family:
         rank = np.argsort(self.evaluation)
         # エリート選択
         survivor.append(genom_list[rank[0]])
-        luckey = self._roulette(rank[1:], select_num=1)[0]
-        survivor.append(luckey)
+        luckey_ind = self._roulette(rank[1:], select_num=1)[0]
+        survivor.append(genom_list[luckey_ind])
+        # genomに評価値を格納しておく。再び評価されることがあれば計算を避けるため。
+        survivor[0].set_evaluation(self.evaluation[rank[0]]) 
+        survivor[1].set_evaluation(self.evaluation[luckey_ind])
         return survivor
 
     
@@ -207,7 +215,7 @@ class Generation:
         self.pm = pm
     
     def evaluate(self, target):
-        self.evaluation = np.array([Phenotype(g, shape=target.shape).evaluate(target) for g in self.genom_list])
+        self.evaluation = np.array([Phenotype(g, shape=target.shape).evaluate(target) if g.evaluation is None else g.evaluation for g in self.genom_list])
         
     def mgg_change(self, target):
         """
