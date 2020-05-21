@@ -47,10 +47,30 @@ class Genom:
         self.chromosome[:,2] = np.random.randint(0, self.limits[2], self.genom_length) # 円の半径
     
     def mutate(self, pm):
+        # Pm(変異率)が、「あるゲノムで突然変異が起こる確率」なのか、「ある遺伝子座で突然変異が起こる確率」なのか理解できていない。
+        # 挿入・欠失は前者、置換は後者の解釈でpmを与えているため、一貫していない。
+        # ただ、この確率がアルゴリズムの成否に強く関わる訳ではないと考えるので、一旦こういう実装にしてある。
+        self.insert_delete(pm)
+        self.replace(pm)
+
+    def replace(self, pm):
         whichwillbechanged = np.random.choice([True, False], self.chromosome.shape, p=[pm, 1-pm])
         self.chromosome[whichwillbechanged[:,0], 0] = np.random.randint(0, self.limits[0], np.sum(whichwillbechanged[:,0]))
         self.chromosome[whichwillbechanged[:,1], 1] = np.random.randint(0, self.limits[1], np.sum(whichwillbechanged[:,1]))
         self.chromosome[whichwillbechanged[:,2], 2] = np.random.randint(0, self.limits[2], np.sum(whichwillbechanged[:,2]))
+    
+    def insert_delete(self, pm):
+        operation = np.random.choice(["delete", "insert", "none"], 1, p=[pm/2, pm/2, 1-pm])[0]
+        if operation == "none":
+            pass
+        elif operation == "delete":
+            ind = np.random.randint(0, len(self.chromosome), 1)[0]
+            self.chromosome = np.delete(self.chromosome, ind, axis=0)
+        elif operation == "insert":
+            ind = np.random.randint(0, len(self.chromosome), 1)[0]
+            inserted_gene = np.array([np.random.randint(0, self.limits[i], 1)[0] for i in range(3)])
+            self.chromosome = np.insert(self.chromosome, ind, inserted_gene, axis=0)
+
 
 class Phenotype():
     def __init__(self, genom: Genom, shape):
@@ -63,8 +83,9 @@ class Phenotype():
         self.morph = self.morph * mask
     
     def overlap(self):
-        total_circle_area = np.sum(self.genom[:, 3] ** 2 * np.pi)
-        return overrap
+        total_circle_area = np.sum(self.genom[:, 2] ** 2 * np.pi)
+        overlap = total_circle_area - np.sum(self.morph == 0)
+        return overlap
 
     def as_image(self):
         return self.morph
@@ -85,12 +106,25 @@ class Phenotype():
         plt.close()
         
     def evaluate(self, target:np.ndarray):
+        m = 0.01
+        """
+        評価値 = L2(downsample(blur(target)) - downsample(blur(generated))) + m * circle_overlap
+        ダウンサンプルした後の目標画像との距離に加え、円同士が重なっている部分の面積をペナルティとして加える。（評価値は低いほど良い）
+        mは円同士の重なりの重要性を評価する係数。
+        L2(diff)は、255 * sqrt(ダウンサンプル後の画像サイズ~20*20) ~ 5000程度のオーダー
+        overlapは、(半径~20) **2 * pi * (円の数~30) ~ 30000程度のオーダー
+        L2(diff) の方を重要視してほしいので、m = 0.01程度に設定した
+        """
         ds_rate = min(self.morph.shape) // 20
         # 畳み込み -> 差分　と 差分 -> 畳み込み は等価なので、畳み込みを一回で済ました方がいい
         # down_sampled_morph = scipy.ndimage.gaussian_filter(self.morph, sigma=ds_rate)[::ds_rate, ::ds_rate]
         # down_sampled_target = scipy.ndimage.gaussian_filter(target, sigma=ds_rate)[::ds_rate, ::ds_rate]
         diff = scipy.ndimage.gaussian_filter(target - self.morph, sigma=ds_rate)[::ds_rate, ::ds_rate]
-        return np.linalg.norm(diff)
+        overlap = self.overlap()
+        p = random.randint(0, 100)
+        if p == 1:
+            print(f"image-diff: {np.linalg.norm(diff)}, overlap: {overlap}")
+        return np.linalg.norm(diff) + m * overlap
 
 class Family:
     def __init__(self, genom1, genom2):
@@ -98,7 +132,6 @@ class Family:
         self.genom2 = genom2
         self.offspring1 = None
         self.offspring2 = None
-        self.genom_list = []
         self.evaluation = [] # evalation of [genom1, genom2, offspring1, offspring2] 
 
     def _crossover(self):
@@ -224,6 +257,8 @@ class Generation:
     def summary(self):
         mi, ma, ave = np.min(self.evaluation), np.max(self.evaluation), np.mean(self.evaluation)
         print(f"best: {mi:.1f}, worst: {ma:.1f}, ave: {ave:.1f}")
+        genom_lengths = [len(g.chromosome) for g in self.genom_list]
+        print(f"max circle num: {max(genom_lengths)}, min circle num: {min(genom_lengths)}")
         return mi, ma, ave
     
     def print_info(self):
