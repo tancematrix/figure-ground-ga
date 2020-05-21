@@ -5,17 +5,26 @@ from typing import NamedTuple
 import scipy.ndimage
 import random
 import pickle
-from numba import jit
+import config
 HEIGHT, WIDTH = 150, 90
 
 # 補助的な関数
-@jit(nopython=True)
-def circle_mask(shape, cx, cy, r):
-    x = np.arange(shape[0]).reshape(-1, 1)
-    y = np.arange(shape[1]).reshape(1, -1)
-    r2 = (x-cx)*(x-cx) + (y-cy)*(y-cy)
-    mask = r2 > r ** 2
-    return mask
+if config.numba_available:
+    from numba import jit
+    @jit(nopython=True)
+    def circle_mask(shape, cx, cy, r):
+        x = np.arange(shape[0]).reshape(-1, 1)
+        y = np.arange(shape[1]).reshape(1, -1)
+        r2 = (x-cx)*(x-cx) + (y-cy)*(y-cy)
+        mask = r2 > r ** 2
+        return mask
+else:
+    def circle_mask(shape, cx, cy, r):
+        x = np.arange(shape[0]).reshape(-1, 1)
+        y = np.arange(shape[1]).reshape(1, -1)
+        r2 = (x-cx)*(x-cx) + (y-cy)*(y-cy)
+        mask = r2 > r ** 2
+        return mask
 
 class Genom:
     def __init__(self, genom_length, limits, random=True, chromosome=None):
@@ -52,6 +61,10 @@ class Phenotype():
     def encode(self):
         mask = np.multiply.reduce(np.apply_along_axis(self._mask, 1, self.genom))
         self.morph = self.morph * mask
+    
+    def overlap(self):
+        total_circle_area = np.sum(self.genom[:, 3] ** 2 * np.pi)
+        return overrap
 
     def as_image(self):
         return self.morph
