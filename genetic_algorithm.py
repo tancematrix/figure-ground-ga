@@ -10,6 +10,7 @@ HEIGHT, WIDTH = 150, 90
 
 # 補助的な関数
 if config.numba_available:
+    # numba使ってもそんなには早くならなかった
     from numba import jit
     @jit(nopython=True)
     def circle_mask(shape, cx, cy, r):
@@ -125,9 +126,6 @@ class Phenotype():
         # down_sampled_target = scipy.ndimage.gaussian_filter(target, sigma=ds_rate)[::ds_rate, ::ds_rate]
         diff = scipy.ndimage.gaussian_filter(target - self.morph, sigma=ds_rate)[::ds_rate, ::ds_rate]
         overlap = self.overlap()
-        p = random.randint(0, 100)
-        if p == 1:
-            print(f"image-diff: {np.linalg.norm(diff)}, overlap: {overlap}")
         return np.linalg.norm(diff) + m * overlap
 
 class Family:
