@@ -12,7 +12,7 @@ HEIGHT, WIDTH = 150, 90
 if config.numba_available:
     # numba使ってもそんなには早くならなかった
     from numba import jit
-    @jit('b1[:,:](i8[:,:], i8, i8, i8)', nopython=True)
+    @jit('b1[:,:](b1[:,:], u1, u1, u1)', nopython=True)
     def circle_mask(canvas, cx, cy, r):
         x = np.arange(canvas.shape[0]).reshape(-1, 1)
         y = np.arange(canvas.shape[1]).reshape(1, -1)
@@ -20,9 +20,9 @@ if config.numba_available:
         mask = r2 > r ** 2
         return mask
 else:
-    def circle_mask(shape, cx, cy, r):
-        x = np.arange(shape[0]).reshape(-1, 1)
-        y = np.arange(shape[1]).reshape(1, -1)
+    def circle_mask(canvas, cx, cy, r):
+        x = np.arange(canvas.shape[0]).reshape(-1, 1)
+        y = np.arange(canvas.shape[1]).reshape(1, -1)
         r2 = (x-cx)*(x-cx) + (y-cy)*(y-cy)
         mask = r2 > r ** 2
         return mask
@@ -32,7 +32,7 @@ class Genom:
         self.genom_length = np.ceil(np.random.normal(genom_length, scale=(0.33 * genom_length))) # 0 ~ genom_length * 2の間に存在する確率がだいたい99.7%
         self.genom_length = int(max(1, self.genom_length))
         self.gene_length = 3 # ハードコーディング
-        self.chromosome = np.zeros([self.genom_length, self.gene_length])
+        self.chromosome = np.zeros([self.genom_length, self.gene_length], dtype=np.uint8)
         self.limits = limits
         self.evaluation = None
         if chromosome is not None:
@@ -82,13 +82,15 @@ class Genom:
 
 class Phenotype():
     def __init__(self, genom: Genom, shape):
-        self.morph = np.full(shape, 255)
+        self.morph = np.full(shape, 255, dtype=np.uint8)
         self.genom = genom.chromosome # TODO: 直接渡しているのでよくない
         self.encode(shape, self.genom)
 
     def encode(self, shape, genom):
-        mask = np.multiply.reduce(np.apply_along_axis(self._mask, 1, self.genom))
-        self.morph = self.morph * mask
+        mask = np.full(shape, True, dtype=np.bool)
+        for gene in genom:
+            mask = circle_mask(mask, *gene)
+        self.morph *= mask
     
     def overlap(self):
         total_circle_area = np.sum(self.genom[:, 2] ** 2 * np.pi)
