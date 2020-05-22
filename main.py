@@ -29,17 +29,16 @@ def decide_genom_length(target: np.ndarray):
 if __name__ == "__main__":
     """
     定数
-    GENERATION_GAP: 世代交代で淘汰される個体の割合
     GENERATION_SIZE: 一世代の個体数
     MAX_ITER: 最大の世代交代数（ループの数）
     PM: 突然変異確率（各遺伝子がこの確率で突然変異する）
     """
-    GENERATION_GAP = 0.2
     GENERATION_SIZE = 20
     PM = 0.05
 
     parser = argparse.ArgumentParser()
     parser.add_argument("--target", action="store", type=str, required=True, help="Path to the image of letters, which we imitate. Use letter2image.py beforehand.")
+    parser.add_argument("--generation_size", action="store", type=int, required=False, default=30, help="Number of indivisuals(in this case, =genoms) in a generation.")
     parser.add_argument("--iter_num", action="store", type=int, default=5000, help="Number of generation iterations")    
     parser.add_argument("--result_dir", action="store", type=str, default="result", help="Directory to save result files.")    
     parser.add_argument("--circle_num", action='store', type=int, default=None)
@@ -82,7 +81,7 @@ if __name__ == "__main__":
             if mi < 100:
                 print("score achieved, break..")
                 break
-        if i % 500 == 0:
+        if i % 1000 == 0:
             print("saving 途中経過...")
             g.show_all(255-target, savepath=args.result_dir+f"/generation_{i}.png")
         g.mgg_change(255-target)
