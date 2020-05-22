@@ -86,7 +86,7 @@ if __name__ == "__main__":
         if i % 10000 == 0:
             print("saving 途中経過...")
             g.show_all(255-target, savepath=args.result_dir+f"/generation_{i}.png")
-        if i % 1000 === 0:
+        if i % 1000 == 0:
             # 大変異
             g.set_pm(0.5)
             g.mgg_change(255-target)
