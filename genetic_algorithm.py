@@ -30,7 +30,7 @@ else:
 class Genom:
     def __init__(self, genom_length, limits, random=True, chromosome=None):
         self.genom_length = np.ceil(np.random.normal(genom_length, scale=(0.33 * genom_length))) # 0 ~ genom_length * 2の間に存在する確率がだいたい99.7%
-        self.genom_length = int(max(2, self.genom_length)) # 2以上ないと交差ができない
+        self.genom_length = int(max(3, self.genom_length)) # 3以上ないと交差ができない
         self.gene_length = 3 # ハードコーディング
         self.chromosome = np.zeros([self.genom_length, self.gene_length], dtype=np.int)
         self.limits = limits
