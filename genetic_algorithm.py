@@ -29,7 +29,7 @@ else:
 
 class Genom:
     def __init__(self, genom_length, limits, random=True, chromosome=None):
-        self.genom_length = np.ceil(np.random.normal(genom_length, scale=(0.25 * genom_length))[0]) # genom_length * 0.5 ~ genom_length * 1.5の間に存在する確率がだいたい95%
+        self.genom_length = np.ceil(np.random.normal(genom_length, scale=(0.25 * genom_length))) # genom_length * 0.5 ~ genom_length * 1.5の間に存在する確率がだいたい95%
         self.genom_length = max(1, self.genom_length)
         self.gene_length = 3 # ハードコーディング
         self.chromosome = np.zeros([self.genom_length, self.gene_length])
