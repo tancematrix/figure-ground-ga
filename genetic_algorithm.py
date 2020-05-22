@@ -18,14 +18,14 @@ if config.numba_available:
         y = np.arange(canvas.shape[1]).reshape(1, -1)
         r2 = (x-cx)*(x-cx) + (y-cy)*(y-cy)
         mask = r2 > r ** 2
-        return mask
+        return mask * canvas
 else:
     def circle_mask(canvas, cx, cy, r):
         x = np.arange(canvas.shape[0]).reshape(-1, 1)
         y = np.arange(canvas.shape[1]).reshape(1, -1)
         r2 = (x-cx)*(x-cx) + (y-cy)*(y-cy)
         mask = r2 > r ** 2
-        return mask
+        return mask * canvas
 
 class Genom:
     def __init__(self, genom_length, limits, random=True, chromosome=None):
@@ -56,15 +56,23 @@ class Genom:
         # Pm(変異率)が、「あるゲノムで突然変異が起こる確率」なのか、「ある遺伝子座で突然変異が起こる確率」なのか理解できていない。
         # 挿入・欠失は前者、置換は後者の解釈でpmを与えているため、一貫していない。
         # ただ、この確率がアルゴリズムの成否に強く関わる訳ではないと考えるので、一旦こういう実装にしてある。
-        self.insert_delete(pm)
-        self.replace(pm)
+        self.insert_delete(pm/3)
+        self.perturbate(pm/3)
+        self.replace(pm/3)
 
     def replace(self, pm):
         whichwillbechanged = np.random.choice([True, False], self.chromosome.shape, p=[pm, 1-pm])
         self.chromosome[whichwillbechanged[:,0], 0] = np.random.randint(0, self.limits[0], np.sum(whichwillbechanged[:,0]))
         self.chromosome[whichwillbechanged[:,1], 1] = np.random.randint(0, self.limits[1], np.sum(whichwillbechanged[:,1]))
         self.chromosome[whichwillbechanged[:,2], 2] = np.random.randint(0, self.limits[2], np.sum(whichwillbechanged[:,2]))
-    
+
+    def perturbate(self, pm):
+        whichwillbechanged = np.random.choice([True, False], self.chromosome.shape, p=[pm, 1-pm])
+        self.chromosome[whichwillbechanged[:,0], 0] += np.random.normal(0, scale=10, np.sum(whichwillbechanged[:,0]))
+        self.chromosome[whichwillbechanged[:,1], 1] += np.random.normal(0, scale=10, np.sum(whichwillbechanged[:,1]))
+        self.chromosome[whichwillbechanged[:,2], 2] += np.random.normal(0, scale=10, np.sum(whichwillbechanged[:,2]))
+
+
     def insert_delete(self, pm):
         operation = np.random.choice(["delete", "insert", "none"], 1, p=[pm/2, pm/2, 1-pm])[0]
         if operation == "none":
@@ -116,14 +124,19 @@ class Phenotype():
         plt.close()
         
     def evaluate(self, target:np.ndarray):
-        m = 0.1
+        m = 0.05
+        th = 500
         """
         評価値 = L2(downsample(blur(target)) - downsample(blur(generated))) + m * circle_overlap
         ダウンサンプルした後の目標画像との距離に加え、円同士が重なっている部分の面積をペナルティとして加える。（評価値は低いほど良い）
+        overlapは、円の面積の単純な和 - エンコード画像の縁が描画されている範囲　で算出している。
+        このため、円がキャンバスの外にはみ出ている場合もペナルティになってしまっている。
+        それから、描画範囲は離散値なので、O(半径)くらいの誤差がでる。
+        多少の重なりを許したいということもあるので（例えば500pix程度）threshold = 500 以上のoverlapのみをpneltyとした。
+        L2(diff)は、最大255 * sqrt(ダウンサンプル後の画像サイズ~20*20) ~ 5000程度のオーダー
+        overlapは、最大(半径~20) **2 * pi * (円の数~30) ~ 30000程度のオーダー
         mは円同士の重なりの重要性を評価する係数。
-        L2(diff)は、255 * sqrt(ダウンサンプル後の画像サイズ~20*20) ~ 5000程度のオーダー
-        overlapは、(半径~20) **2 * pi * (円の数~30) ~ 30000程度のオーダー
-        L2(diff) の方を重要視してほしいので、m = 0.01程度に設定した
+        L2(diff) の方を重要視してほしいので、m = 0.05程度に設定した。
         """
         ds_rate = min(self.morph.shape) // 20
         # 畳み込み -> 差分　と 差分 -> 畳み込み は等価なので、畳み込みを一回で済ました方がいい
@@ -131,7 +144,7 @@ class Phenotype():
         # down_sampled_target = scipy.ndimage.gaussian_filter(target, sigma=ds_rate)[::ds_rate, ::ds_rate]
         diff = scipy.ndimage.gaussian_filter(target - self.morph, sigma=ds_rate)[::ds_rate, ::ds_rate]
         overlap = self.overlap()
-        return np.linalg.norm(diff) + m * overlap
+        return np.linalg.norm(diff) + m * max(overlap, th)
 
 class Family:
     def __init__(self, genom1, genom2):
