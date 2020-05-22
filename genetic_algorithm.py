@@ -68,9 +68,9 @@ class Genom:
 
     def perturbate(self, pm):
         whichwillbechanged = np.random.choice([True, False], self.chromosome.shape, p=[pm, 1-pm])
-        self.chromosome[whichwillbechanged[:,0], 0] += np.random.normal(0, scale=10, size=np.sum(whichwillbechanged[:,0]))
-        self.chromosome[whichwillbechanged[:,1], 1] += np.random.normal(0, scale=10, size=np.sum(whichwillbechanged[:,1]))
-        self.chromosome[whichwillbechanged[:,2], 2] += np.random.normal(0, scale=10, size=np.sum(whichwillbechanged[:,2]))
+        self.chromosome[whichwillbechanged[:,0], 0] += np.floor(np.random.normal(0, scale=10, size=np.sum(whichwillbechanged[:,0])))
+        self.chromosome[whichwillbechanged[:,1], 1] += np.floor(np.random.normal(0, scale=10, size=np.sum(whichwillbechanged[:,1])))
+        self.chromosome[whichwillbechanged[:,2], 2] += np.floor(np.random.normal(0, scale=10, size=np.sum(whichwillbechanged[:,2])))
 
 
     def insert_delete(self, pm):
