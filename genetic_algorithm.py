@@ -98,12 +98,28 @@ class Phenotype():
         mask = np.full(shape, True, dtype=np.bool)
         for gene in genom:
             mask = circle_mask(mask, *gene)
-        self.morph *= mask
-    
+        self.morph *= mask        
+
     def overlap(self):
         total_circle_area = np.sum(self.genom[:, 2] ** 2 * np.pi)
         overlap = total_circle_area - np.sum(self.morph == 0)
         return overlap
+
+    def circle_interfer(self):
+        # overlapは大きな円に不利すぎた。面積ベースではなく、距離ベースで重なりを評価する。
+        locations = self.genom[:, :2]
+        rs = self.genom[:, 2]
+        # 円同士の距離
+        distances = np.sqrt(np.sum((np.expand_dims(locations, axis=0) - np.expand_dims(locations, axis=1)) ** 2, axis=2))
+        # 円同士の半径
+        arms = np.expand_dims(rs, axis=0) + np.expand_dims(rs, axis=1) - 2 * np.diag(rs) # 対各区成分を引いている
+        interfer = arms - distances
+        # 各円に対するinterferの値。標準化的なこと。円が大きいとペナルティが増大するのを避けたい。
+        interfer = interfer / (rs + 0.1) # 半径0だとまずい
+        # 十分に離れている場合は0
+
+        interfer[interfer < 0] = 0
+        return np.sum(interfer)
 
     def as_image(self):
         return self.morph
@@ -124,8 +140,8 @@ class Phenotype():
         plt.close()
         
     def evaluate(self, target:np.ndarray):
-        m = 0.005
-        th = 2000
+        m = 0.1
+        th = 200
         """
         評価値 = L2(downsample(blur(target)) - downsample(blur(generated))) + m * circle_overlap
         ダウンサンプルした後の目標画像との距離に加え、円同士が重なっている部分の面積をペナルティとして加える。（評価値は低いほど良い）
@@ -143,7 +159,7 @@ class Phenotype():
         # down_sampled_morph = scipy.ndimage.gaussian_filter(self.morph, sigma=ds_rate)[::ds_rate, ::ds_rate]
         # down_sampled_target = scipy.ndimage.gaussian_filter(target, sigma=ds_rate)[::ds_rate, ::ds_rate]
         diff = scipy.ndimage.gaussian_filter(target - self.morph, sigma=ds_rate)[::ds_rate, ::ds_rate]
-        overlap = self.overlap()
+        overlap = self.circle_interfer()
         return np.linalg.norm(diff) + m * max(overlap, th)
 
 class Family:
