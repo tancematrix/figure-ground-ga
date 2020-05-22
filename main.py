@@ -74,14 +74,14 @@ if __name__ == "__main__":
         g.breed()
     """
     for i in range(args.iter_num):
-        if i % 100 == 0:
+        if i % 5000 == 0:
             print(f"generation {i}")
             g.evaluate(255-target)
             mi, ma, ave = g.summary()
             if mi < 100:
                 print("score achieved, break..")
                 break
-        if i % 1000 == 0:
+        if i % 10000 == 0:
             print("saving 途中経過...")
             g.show_all(255-target, savepath=args.result_dir+f"/generation_{i}.png")
         g.mgg_change(255-target)
