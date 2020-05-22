@@ -86,17 +86,9 @@ class Phenotype():
         self.genom = genom.chromosome # TODO: 直接渡しているのでよくない
         self.encode(shape, self.genom)
 
-    if config.numba_available:
-        @jit(nopython=True)
-        def encode(self, shape, genom):
-            canvas = np.full(shape, 255)
-            for gene in genom:
-                canvas = circle_mask(canvas, *gene)
-            self.morph = canvas
-    else:
-        def encode(self, shape, genom):
-            mask = np.multiply.reduce(np.apply_along_axis(self._mask, 1, self.genom))
-            self.morph = self.morph * mask
+    def encode(self, shape, genom):
+        mask = np.multiply.reduce(np.apply_along_axis(self._mask, 1, self.genom))
+        self.morph = self.morph * mask
     
     def overlap(self):
         total_circle_area = np.sum(self.genom[:, 2] ** 2 * np.pi)
