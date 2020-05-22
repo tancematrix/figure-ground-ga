@@ -57,7 +57,7 @@ class Genom:
         # 挿入・欠失は前者、置換は後者の解釈でpmを与えているため、一貫していない。
         # ただ、この確率がアルゴリズムの成否に強く関わる訳ではないと考えるので、一旦こういう実装にしてある。
         self.insert_delete(pm/3)
-        #self.perturbate(pm/3)
+        self.perturbate(pm/3)
         self.replace(pm/3)
 
     def replace(self, pm):
@@ -136,6 +136,7 @@ class Phenotype():
         plt.gray()
         plt.imshow(255 - self.morph)
         plt.title(title)
+        plt.axis("off")
         plt.savefig(path)
         plt.close()
         
