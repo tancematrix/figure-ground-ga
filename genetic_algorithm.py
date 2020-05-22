@@ -32,7 +32,7 @@ class Genom:
         self.genom_length = np.ceil(np.random.normal(genom_length, scale=(0.33 * genom_length))) # 0 ~ genom_length * 2の間に存在する確率がだいたい99.7%
         self.genom_length = int(max(2, self.genom_length)) # 2以上ないと交差ができない
         self.gene_length = 3 # ハードコーディング
-        self.chromosome = np.zeros([self.genom_length, self.gene_length], dtype=np.uint8)
+        self.chromosome = np.zeros([self.genom_length, self.gene_length], dtype=np.int)
         self.limits = limits
         self.evaluation = None
         if chromosome is not None:
@@ -68,10 +68,10 @@ class Genom:
 
     def perturbate(self, pm):
         whichwillbechanged = np.random.choice([True, False], self.chromosome.shape, p=[pm, 1-pm])
-        self.chromosome[whichwillbechanged[:,0], 0] += np.floor(np.random.normal(0, scale=10, size=np.sum(whichwillbechanged[:,0])))
-        self.chromosome[whichwillbechanged[:,1], 1] += np.floor(np.random.normal(0, scale=10, size=np.sum(whichwillbechanged[:,1])))
-        self.chromosome[whichwillbechanged[:,2], 2] += np.floor(np.random.normal(0, scale=10, size=np.sum(whichwillbechanged[:,2])))
-
+        self.chromosome[whichwillbechanged[:,0], 0] += np.floor(np.random.normal(0, scale=10, size=np.sum(whichwillbechanged[:,0]))).astype(np.int)
+        self.chromosome[whichwillbechanged[:,1], 1] += np.floor(np.random.normal(0, scale=10, size=np.sum(whichwillbechanged[:,1]))).astype(np.int)
+        self.chromosome[whichwillbechanged[:,2], 2] += np.floor(np.random.normal(0, scale=10, size=np.sum(whichwillbechanged[:,2]))).astype(np.int)
+        self.chromosome[self.chromosome < 0] = 0 # 負にならないように
 
     def insert_delete(self, pm):
         operation = np.random.choice(["delete", "insert", "none"], 1, p=[pm/2, pm/2, 1-pm])[0]
