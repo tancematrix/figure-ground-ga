@@ -29,7 +29,8 @@ else:
 
 class Genom:
     def __init__(self, genom_length, limits, random=True, chromosome=None):
-        self.genom_length = genom_length
+        self.genom_length = np.ceil(np.random.normal(genom_length, scale=(0.25 * genom_length))[0]) # genom_length * 0.5 ~ genom_length * 1.5の間に存在する確率がだいたい95%
+        self.genom_length = max(1, self.genom_length)
         self.gene_length = 3 # ハードコーディング
         self.chromosome = np.zeros([self.genom_length, self.gene_length])
         self.limits = limits
@@ -71,10 +72,12 @@ class Genom:
         elif operation == "delete":
             ind = np.random.randint(0, len(self.chromosome), 1)[0]
             self.chromosome = np.delete(self.chromosome, ind, axis=0)
+            self.genom_length -= 1
         elif operation == "insert":
             ind = np.random.randint(0, len(self.chromosome), 1)[0]
             inserted_gene = np.array([np.random.randint(0, self.limits[i], 1)[0] for i in range(3)])
             self.chromosome = np.insert(self.chromosome, ind, inserted_gene, axis=0)
+            self.genom_length += 1
 
 
 class Phenotype():
@@ -105,7 +108,7 @@ class Phenotype():
     
     def save(self, path, title=""):
         plt.gray()
-        plt.imshow(self.morph)
+        plt.imshow(255 - self.morph)
         plt.title(title)
         plt.savefig(path)
         plt.close()
@@ -291,6 +294,7 @@ class Generation:
             plt.gray()
             ax.imshow(255 - Phenotype(genom, shape=target.shape).as_image(), vmin = 0, vmax = 255)
             ax.title.set_text("{:.1f}".format(evaluation))
+        plt.tight_layout()
         if savepath:
             plt.savefig(savepath)
         else:
