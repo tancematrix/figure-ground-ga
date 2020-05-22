@@ -29,7 +29,7 @@ else:
 
 class Genom:
     def __init__(self, genom_length, limits, random=True, chromosome=None):
-        self.genom_length = np.ceil(np.random.normal(genom_length, scale=(0 * genom_length))) # 0 ~ genom_length * 2の間に存在する確率がだいたい99.7%
+        self.genom_length = np.ceil(np.random.normal(genom_length, scale=(0.1 * genom_length))) # 0 ~ genom_length * 2の間に存在する確率がだいたい99.7%
         self.genom_length = int(max(3, self.genom_length)) # 3以上ないと交差ができない
         self.gene_length = 3 # ハードコーディング
         self.chromosome = np.zeros([self.genom_length, self.gene_length], dtype=np.int)
@@ -56,8 +56,8 @@ class Genom:
         # Pm(変異率)が、「あるゲノムで突然変異が起こる確率」なのか、「ある遺伝子座で突然変異が起こる確率」なのか理解できていない。
         # 挿入・欠失は前者、置換は後者の解釈でpmを与えているため、一貫していない。
         # ただ、この確率がアルゴリズムの成否に強く関わる訳ではないと考えるので、一旦こういう実装にしてある。
-        self.insert_delete(pm)
-        self.perturbate(pm/3)
+        self.insert_delete(pm/3)
+        #self.perturbate(pm/3)
         self.replace(pm/3)
 
     def replace(self, pm):
@@ -124,8 +124,8 @@ class Phenotype():
         plt.close()
         
     def evaluate(self, target:np.ndarray):
-        m = 0.05
-        th = 500
+        m = 0.005
+        th = 2000
         """
         評価値 = L2(downsample(blur(target)) - downsample(blur(generated))) + m * circle_overlap
         ダウンサンプルした後の目標画像との距離に加え、円同士が重なっている部分の面積をペナルティとして加える。（評価値は低いほど良い）
