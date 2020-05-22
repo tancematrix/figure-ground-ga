@@ -33,8 +33,6 @@ if __name__ == "__main__":
     MAX_ITER: 最大の世代交代数（ループの数）
     PM: 突然変異確率（各遺伝子がこの確率で突然変異する）
     """
-    GENERATION_SIZE = 20
-    PM = 0.05
 
     parser = argparse.ArgumentParser()
     parser.add_argument("--target", action="store", type=str, required=True, help="Path to the image of letters, which we imitate. Use letter2image.py beforehand.")
@@ -43,6 +41,10 @@ if __name__ == "__main__":
     parser.add_argument("--result_dir", action="store", type=str, default="result", help="Directory to save result files.")    
     parser.add_argument("--circle_num", action='store', type=int, default=None)
     args = parser.parse_args()
+
+    GENERATION_SIZE = args.generation_size
+    PM = 0.05
+
 
     # 画像を読み込んでグレースケールに変換
     img = PIL.Image.open(args.target)
