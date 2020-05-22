@@ -111,7 +111,7 @@ class Phenotype():
         plt.close()
         
     def evaluate(self, target:np.ndarray):
-        m = 0.01
+        m = 0.1
         """
         評価値 = L2(downsample(blur(target)) - downsample(blur(generated))) + m * circle_overlap
         ダウンサンプルした後の目標画像との距離に加え、円同士が重なっている部分の面積をペナルティとして加える。（評価値は低いほど良い）
