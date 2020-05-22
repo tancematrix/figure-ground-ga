@@ -12,7 +12,7 @@ HEIGHT, WIDTH = 150, 90
 if config.numba_available:
     # numba使ってもそんなには早くならなかった
     from numba import jit
-    @jit('i8[:,:](i8[:,:], i8, i8, i8)', nopython=True)
+    @jit('b[:,:](i8[:,:], i8, i8, i8)', nopython=True)
     def circle_mask(canvas, cx, cy, r):
         x = np.arange(canvas.shape[0]).reshape(-1, 1)
         y = np.arange(canvas.shape[1]).reshape(1, -1)
