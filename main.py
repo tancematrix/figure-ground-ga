@@ -94,8 +94,11 @@ if __name__ == "__main__":
         else:
             g.mgg_change(255-target)
 
+    g.evaluate(255-target)
     g.show_all(255-target, savepath=args.result_dir+f"/generation_{args.iter_num-1}.png")
-    best_genom, best_score = g.chief()
-    best_pheno = Phenotype(best_genom, shape=target.shape)
-    best_pheno.save(args.result_dir + "/best.png")
+    scores = g.get_evaluation()
+    last_phenos = [Phenotype(genom, target.shape, magnification=10) for genom in g.get_genom_list()]
+    last_pheno_and_scores = sorted(zip(last_phenos, scores), key=lambda x: x[1])
+    for i, (pheno, score) in enumerate(last_pheno_and_scores):
+        pheno.save(args.result_dir + f"/last_{i}.png")
     pickle.dump(g, open(args.result_dir + "/last_generation.pkl", "wb"))

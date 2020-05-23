@@ -29,7 +29,7 @@ else:
 
 class Genom:
     def __init__(self, genom_length, limits, random=True, chromosome=None):
-        self.genom_length = np.ceil(np.random.normal(genom_length, scale=(0.1 * genom_length))) # 0 ~ genom_length * 2の間に存在する確率がだいたい99.7%
+        self.genom_length = np.ceil(np.random.normal(genom_length, scale=(0.01 * genom_length))) # 0 ~ genom_length * 2の間に存在する確率がだいたい99.7%
         self.genom_length = int(max(3, self.genom_length)) # 3以上ないと交差ができない
         self.gene_length = 3 # ハードコーディング
         self.chromosome = np.zeros([self.genom_length, self.gene_length], dtype=np.int)
@@ -89,9 +89,11 @@ class Genom:
 
 
 class Phenotype():
-    def __init__(self, genom: Genom, shape):
-        self.morph = np.full(shape, 255, dtype=np.uint8)
-        self.genom = genom.chromosome # TODO: 直接渡しているのでよくない
+    def __init__(self, genom: Genom, shape: np.ndarray, magnification=1):
+        # magnificationは本質的ではないけれども、最後に画像を保存する際の画像サイズを指定する。
+        shape = np.array(shape) * magnification
+        self.morph = np.full(shape, 255, dtype=np.uint8) 
+        self.genom = genom.chromosome * magnification# TODO: 直接渡しているのでよくない
         self.encode(shape, self.genom)
 
     def encode(self, shape, genom):
@@ -117,9 +119,8 @@ class Phenotype():
         # 各円に対するinterferの値。標準化的なこと。円が大きいとペナルティが増大するのを避けたい。
         interfer = interfer / (rs + 0.1) # 半径0だとまずい
         # 十分に離れている場合は0
-
         interfer[interfer < 0] = 0
-        return np.sum(interfer)
+        return np.mean(interfer) # 円の数についても標準化することにした。
 
     def as_image(self):
         return self.morph
@@ -134,7 +135,7 @@ class Phenotype():
     
     def save(self, path, title=""):
         plt.gray()
-        plt.imshow(255 - self.morph)
+        plt.imshow(255 - self.morph, vmin = 0, vmax = 255)
         plt.title(title)
         plt.axis("off")
         plt.savefig(path)
@@ -243,6 +244,12 @@ class Generation:
         self.elite_ind = []
         self.pm = pm
     
+    def get_genom_list(self):
+        return self.genom_list
+
+    def get_evaluation(self):
+        return self.evaluation
+
     def set_pm(self, pm):
         # 突然変異確率を決める
         self.pm = pm
@@ -296,6 +303,8 @@ class Generation:
 
     # 以下、情報を表示するためのutility関数
     def summary(self):
+        if self.evaluation == []:
+            self.evaluate()
         mi, ma, ave = np.min(self.evaluation), np.max(self.evaluation), np.mean(self.evaluation)
         print(f"best: {mi:.1f}, worst: {ma:.1f}, ave: {ave:.1f}")
         genom_lengths = [len(g.chromosome) for g in self.genom_list]
