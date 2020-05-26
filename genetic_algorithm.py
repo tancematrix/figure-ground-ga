@@ -58,7 +58,7 @@ class Genom:
         # ただ、この確率がアルゴリズムの成否に強く関わる訳ではないと考えるので、一旦こういう実装にしてある。
         self.insert_delete(pm/3)
         self.perturbate(pm/3)
-        self.replace(pm/3)
+#        self.replace(pm/3)
 
     def replace(self, pm):
         whichwillbechanged = np.random.choice([True, False], self.chromosome.shape, p=[pm, 1-pm])
@@ -119,7 +119,7 @@ class Phenotype():
         # 各円に対するinterferの値。標準化的なこと。円が大きいとペナルティが増大するのを避けたい。
         interfer = interfer / (rs + 0.1) # 半径0だとまずい
         # 十分に離れている場合は0
-        interfer[interfer < 0] = 0
+        interfer[interfer < - 0.01] = - 0.01
         return np.mean(interfer) # 円の数についても標準化することにした。
 
     def as_image(self):
@@ -142,8 +142,9 @@ class Phenotype():
         plt.close()
         
     def evaluate(self, target:np.ndarray):
-        m = 0.1
-        th = 200
+        m = 100 
+        n = 1000
+        th = 0
         """
         評価値 = L2(downsample(blur(target)) - downsample(blur(generated))) + m * circle_overlap
         ダウンサンプルした後の目標画像との距離に加え、円同士が重なっている部分の面積をペナルティとして加える。（評価値は低いほど良い）
@@ -156,13 +157,16 @@ class Phenotype():
         mは円同士の重なりの重要性を評価する係数。
         L2(diff) の方を重要視してほしいので、m = 0.05程度に設定した。
         """
-        ds_rate = min(self.morph.shape) // 20
+        ds_rate = min(self.morph.shape) // 32
         # 畳み込み -> 差分　と 差分 -> 畳み込み は等価なので、畳み込みを一回で済ました方がいい
         # down_sampled_morph = scipy.ndimage.gaussian_filter(self.morph, sigma=ds_rate)[::ds_rate, ::ds_rate]
         # down_sampled_target = scipy.ndimage.gaussian_filter(target, sigma=ds_rate)[::ds_rate, ::ds_rate]
         diff = scipy.ndimage.gaussian_filter(target - self.morph, sigma=ds_rate)[::ds_rate, ::ds_rate]
         overlap = self.circle_interfer()
-        return np.linalg.norm(diff) + m * max(overlap, th)
+        white_area_diff = np.sum(diff) / diff.size
+        if random.randint(0,1000) == 0:
+            print(f"L2: {np.linalg.norm(diff)}, overlap: {m * max(overlap, th)}, white_ratio: {np.abs(white_area_diff)}")
+        return np.linalg.norm(diff) + m * max(overlap, th) +n * np.max(white_area_diff, 0)
 
 class Family:
     def __init__(self, genom1, genom2):
