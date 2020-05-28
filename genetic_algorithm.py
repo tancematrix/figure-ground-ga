@@ -20,12 +20,12 @@ if config.numba_available:
         mask = r2 > r ** 2
         return mask * canvas
 else:
-    def circle_mask(canvas, cx, cy, r):
-        x = np.arange(canvas.shape[0]).reshape(-1, 1)
-        y = np.arange(canvas.shape[1]).reshape(1, -1)
+    def circle_mask(chape, cx, cy, r):
+        x = np.arange(shape[0]).reshape(-1, 1)
+        y = np.arange(shape[1]).reshape(1, -1)
         r2 = (x-cx)*(x-cx) + (y-cy)*(y-cy)
         mask = r2 > r ** 2
-        return mask * canvas
+        return mask
 
 class Genom:
     def __init__(self, genom_length, limits, random=True, chromosome=None):
@@ -96,11 +96,9 @@ class Phenotype():
         self.genom = genom.chromosome * magnification# TODO: 直接渡しているのでよくない
         self.encode(shape, self.genom)
 
-    def encode(self, shape, genom):
-        mask = np.full(shape, True, dtype=np.bool)
-        for gene in genom:
-            mask = circle_mask(mask, *gene)
-        self.morph *= mask        
+    def encode(self):
+        mask = np.multiply.reduce(np.apply_along_axis(self._mask, 1, self.genom))
+        self.morph = self.morph * mask
 
     def overlap(self):
         total_circle_area = np.sum(self.genom[:, 2] ** 2 * np.pi)
