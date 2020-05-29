@@ -6,26 +6,17 @@ import scipy.ndimage
 import random
 import pickle
 import config
+from functools import lru_cache
 HEIGHT, WIDTH = 150, 90
 
 # 補助的な関数
-if config.numba_available:
-    # numba使ってもそんなには早くならなかった
-    from numba import jit
-    @jit('b1[:,:](b1[:,:], u1, u1, u1)', nopython=True)
-    def circle_mask(canvas, cx, cy, r):
-        x = np.arange(canvas.shape[0]).reshape(-1, 1)
-        y = np.arange(canvas.shape[1]).reshape(1, -1)
-        r2 = (x-cx)*(x-cx) + (y-cy)*(y-cy)
-        mask = r2 > r ** 2
-        return mask * canvas
-else:
-    def circle_mask(chape, cx, cy, r):
-        x = np.arange(shape[0]).reshape(-1, 1)
-        y = np.arange(shape[1]).reshape(1, -1)
-        r2 = (x-cx)*(x-cx) + (y-cy)*(y-cy)
-        mask = r2 > r ** 2
-        return mask
+@lru_cache(maxsize=1000)
+def circle_mask(shape, cx, cy, r):
+    x = np.arange(shape[0]).reshape(-1, 1)
+    y = np.arange(shape[1]).reshape(1, -1)
+    r2 = (x-cx)*(x-cx) + (y-cy)*(y-cy)
+    mask = r2 > r ** 2
+    return mask
 
 class Genom:
     def __init__(self, genom_length, limits, random=True, chromosome=None):
@@ -92,13 +83,13 @@ class Phenotype():
     def __init__(self, genom: Genom, shape: np.ndarray, magnification=1):
         # magnificationは本質的ではないけれども、最後に画像を保存する際の画像サイズを指定する。
         shape = np.array(shape) * magnification
-        self.morph = np.full(shape, 255, dtype=np.uint8) 
+        self.morph = None
         self.genom = genom.chromosome * magnification# TODO: 直接渡しているのでよくない
-        self.encode(shape, self.genom)
+        self.encode()
 
     def encode(self):
         mask = np.multiply.reduce(np.apply_along_axis(self._mask, 1, self.genom))
-        self.morph = self.morph * mask
+        self.morph = mask * 255
 
     def overlap(self):
         total_circle_area = np.sum(self.genom[:, 2] ** 2 * np.pi)
@@ -123,9 +114,9 @@ class Phenotype():
     def as_image(self):
         return self.morph
     
-    def _mask(self, gene: np.ndarray):
+    def _mask(self, cx, cy, r):
         shape = self.morph.shape[:2]
-        return circle_mask(shape, *gene)
+        return circle_mask(shape, cx, cy, r)
     
     def show(self):
         plt.imshow(self.morph)
@@ -164,7 +155,7 @@ class Phenotype():
         white_area_diff = np.sum(diff) / diff.size
         if random.randint(0,1000) == 0:
             print(f"L2: {np.linalg.norm(diff)}, overlap: {m * max(overlap, th)}, white_ratio: {np.abs(white_area_diff)}")
-        return np.linalg.norm(diff) + m * max(overlap, th) +n * np.max(white_area_diff, 0)
+        return np.linalg.norm(diff) + m * max(overlap, th) +n * max(white_area_diff, 0)
 
 class Family:
     def __init__(self, genom1, genom2):
